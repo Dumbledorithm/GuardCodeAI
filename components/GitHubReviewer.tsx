@@ -1,5 +1,3 @@
-// File: app/components/GitHubReviewer.tsx
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -16,10 +14,16 @@ type PullRequest = {
   title: string;
 };
 
+// Export this interface so the parent page can use it for saving review history
+export interface ReviewDetails {
+    repo: string;
+    prNumber: number;
+    prTitle: string;
+}
+
+// Update the props to include the new details in the onSubmit function
 interface GitHubReviewerProps {
-  // This function will be passed from the main page to handle the final submission
-  onSubmit: (diff: string, language: string) => void;
-  // This prop tells the component if an AI review is already in progress
+  onSubmit: (diff: string, language: string, details: ReviewDetails) => void;
   isLoading: boolean;
 }
 
@@ -88,9 +92,16 @@ export default function GitHubReviewer({ onSubmit, isLoading }: GitHubReviewerPr
       const response = await fetch(`/api/github/diff?owner=${owner}&repo=${repo}&pull_number=${selectedPR}`);
       if (response.ok) {
         const diffText = await response.text();
-        // We pass the fetched diff up to the parent page.
-        // For simplicity, we assume 'typescript'. A future improvement could be detecting this.
-        onSubmit(diffText, 'typescript');
+        
+        // Create the details object to pass up to the parent page
+        const prDetails: ReviewDetails = {
+            repo: selectedRepo,
+            prNumber: parseInt(selectedPR),
+            prTitle: pullRequests.find(pr => pr.number.toString() === selectedPR)?.title || 'N/A',
+        };
+
+        // Call the updated onSubmit function with all the required data
+        onSubmit(diffText, 'typescript', prDetails);
       } else {
          console.error("Failed to fetch diff");
       }
