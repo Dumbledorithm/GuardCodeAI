@@ -1,41 +1,71 @@
-// File: app/page.tsx
-
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import  Header  from '@/components/Header';
+import Header  from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import  ReviewDisplay  from '@/components/ReviewDisplay';
 import { Bot } from '@/components/Icons';
-import GitHubReviewer from '@/components/GitHubReviewer'; // Import the new component
+import { ReviewDetails } from '@/components/GitHubReviewer';
+import ReviewInterface from '@/components/ReviewInterface';
+import { ProgressChart } from '@/components/ProgressChart';
+import { ReviewHistory } from '@/components/ReviewHistory';
+
+interface HistoricalReview {
+  id: string;
+  repo: string;
+  prTitle: string;
+  qualityScore: number;
+  createdAt: string;
+}
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [review, setReview] = useState<string>('');
+  const [currentReview, setCurrentReview] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [reviewHistory, setReviewHistory] = useState<HistoricalReview[]>([]);
 
-  // This function is now passed to GitHubReviewer and receives the diff content.
-  const handleReviewRequest = async (diff: string, language: string) => {
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const fetchHistory = async () => {
+        try {
+          const res = await fetch('/api/reviews');
+          if (res.ok) setReviewHistory(await res.json());
+        } catch (err) { console.error("Failed to fetch history", err); }
+      };
+      fetchHistory();
+    }
+  }, [status]);
+
+  const handleReviewRequest = async (code: string, language: string, details: ReviewDetails, isDiff: boolean) => {
     setIsLoading(true);
     setError(null);
-    setReview('');
+    setCurrentReview('');
+
     try {
-      const response = await fetch('/api/review', {
+      const aiResponse = await fetch('/api/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // The 'code' property now holds the diff from the PR
-        body: JSON.stringify({ code: diff, language }),
+        body: JSON.stringify({ code, language, isDiff }), // Pass the isDiff flag
       });
+
+      if (!aiResponse.ok) throw new Error('Failed to get review from AI.');
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'An unknown error occurred.');
-      }
+      const { reviewText, qualityScore } = await aiResponse.json();
+      setCurrentReview(reviewText);
+
+      const saveResponse = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...details, reviewText, qualityScore }),
+      });
+
+      if (!saveResponse.ok) throw new Error('Failed to save the new review.');
       
-      const data = await response.json();
-      setReview(data.review);
+      const newReview = await saveResponse.json();
+      setReviewHistory(prev => [newReview, ...prev]);
+
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -50,34 +80,37 @@ export default function Home() {
         <div className="w-full max-w-4xl">
           <Hero />
           
-          {/* Conditionally render content based on authentication status */}
-          {status === 'authenticated' && (
+          {status === 'authenticated' ? (
             <div className="mt-8">
-              <GitHubReviewer onSubmit={handleReviewRequest} isLoading={isLoading} />
-            </div>
-          )}
+              <ReviewInterface onSubmit={handleReviewRequest} isLoading={isLoading} />
+              
+              <div className="mt-12">
+                <h2 className="text-2xl font-bold text-white mb-4">Your Progress</h2>
+                <div className="p-6 bg-gray-900/50 border border-gray-800 rounded-lg">
+                  <ProgressChart data={reviewHistory} />
+                </div>
+              </div>
 
-          {status === 'unauthenticated' && (
-            <div className="mt-8 text-center p-6 rounded-lg bg-gray-900/50 border border-gray-800">
-              <p className="text-lg text-gray-300">Please sign in with GitHub to review your pull requests.</p>
-            </div>
-          )}
-          
-          {/* Display error messages */}
-          {error && <p className="text-red-500 mt-4 text-center">Error: {error}</p>}
-
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="w-full mt-8 flex justify-center">
-              <div className="text-lg font-semibold text-white flex items-center gap-2">
-                <Bot className="h-5 w-5 animate-spin" />
-                Generating your review...
+              <div className="mt-12">
+                <h2 className="text-2xl font-bold text-white mb-4">Recent Reviews</h2>
+                 <ReviewHistory reviews={reviewHistory} />
               </div>
             </div>
+          ) : (
+            <div className="mt-8 text-center p-6 bg-gray-900/50 border border-gray-800 rounded-lg">
+              <p className="text-lg text-gray-300">Sign in with GitHub to review PRs and track your code quality over time.</p>
+            </div>
           )}
           
-          {/* Display the AI review result */}
-          <ReviewDisplay review={review} />
+          {error && <p className="text-red-500 mt-4 text-center">Error: {error}</p>}
+
+          {isLoading && (
+            <div className="w-full mt-8 text-center text-lg text-white">
+              <p><Bot className="h-5 w-5 animate-spin inline mr-2" />Generating and saving your review...</p>
+            </div>
+          )}
+          
+          <ReviewDisplay review={currentReview} />
         </div>
       </main>
     </div>

@@ -14,7 +14,7 @@ const Header = () => {
         <header className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16 border-b border-gray-800">
                 <div className="flex items-center space-x-4">
-                    <span className="font-bold text-xl text-white">CodeSmarter AI</span>
+                    <span className="font-bold text-xl text-white">GuardCode</span>
                 </div>
                 <nav className="hidden md:flex items-center space-x-6">
                     <a href="#" className="text-sm font-medium text-gray-400 hover:text-white">Features</a>
@@ -33,10 +33,10 @@ const Header = () => {
                                 height={32}
                                 className="rounded-full"
                             />
-                            <Button variant="outline" onClick={() => signOut()}>Sign Out</Button>
+                            <Button variant="default" onClick={() => signOut()}>Sign Out</Button>
                         </div>
                     ) : (
-                        <Button variant="outline" onClick={() => signIn('github')}>Sign In with GitHub</Button>
+                        <Button variant="default" onClick={() => signIn('github')}>Sign In with GitHub</Button>
                     )}
                 </div>
             </div>

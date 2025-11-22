@@ -10,7 +10,7 @@ export const Hero = () => (
             </span>
             <span className="ml-3 text-sm text-gray-300">Your code is never stored or shared</span>
         </div>
-        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white">
+        <h1 className="text-4xl sm:text-6xl font-semibold tracking-tighter text-white">
             Ship Flawless Code, Faster.
         </h1>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-400">

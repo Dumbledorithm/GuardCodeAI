@@ -5,16 +5,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // GET: Fetch all reviews for the logged-in user
 export async function GET() {
-    const session: any = await getServerSession(authOptions);
-    if (!session?.user) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    // **FIX:** We now access the user's email directly from the corrected session object.
+    const userId = session?.user?.email;
+
+    if (!userId) {
+        return NextResponse.json({ error: 'Not authenticated or user ID not found' }, { status: 401 });
     }
-    
-    const userId = session.user.email; // Use email as a unique user ID
     
     try {
         const reviewsSnapshot = await db.collection('reviews')
-            .where('userId', '==', userId)
+            .where('userId', '==', userId) // This will now have a valid string value
             .orderBy('createdAt', 'desc')
             .get();
             
@@ -28,9 +29,12 @@ export async function GET() {
 
 // POST: Save a new review
 export async function POST(req: NextRequest) {
-    const session: any = await getServerSession(authOptions);
-    if (!session?.user) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    // **FIX:** We get the userId here as well.
+    const userId = session?.user?.email;
+
+    if (!userId) {
+        return NextResponse.json({ error: 'Not authenticated or user ID not found' }, { status: 401 });
     }
     
     try {
@@ -38,7 +42,7 @@ export async function POST(req: NextRequest) {
         const { repo, prNumber, prTitle, qualityScore, reviewText } = body;
         
         const reviewData = {
-            userId: session.user.email,
+            userId: userId, // This will now be a valid string
             repo,
             prNumber,
             prTitle,
