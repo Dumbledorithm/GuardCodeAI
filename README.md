@@ -1,38 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GuardCode AI : AI based Code reviewer
+GuardCode AI is a developer-centric tool that goes beyond simple code reviews. By integrating directly with the GitHub API, it audits Pull Requests and random snippets while tracking a developer's code quality trends over time.
 
-## Getting Started
+## Key Features
+- ### GitHub PR Integration
+  Connect your repositories to fetch and review open Pull Requests automatically using Octokit.
+- ### Instant Sandbox Review
+  A real-time interface to paste and audit arbitrary code snippets for quick logic checks.
+- ### Quality Trend Analytics
+  Visualizes progress over time with historical data.
+- ### Inference at the Edge
+  Powered by Groq API for near-instantaneous feedback (sub-1s response times).
 
-First, run the development server:
+## Tech Stack
+- ### Framework
+   Next.js 14
+- ### Language
+   TypeScript
+- ### LLM Engine
+   Groq API (Inference on LPU for speed)
+- ### Database
+   Firebase
+- ### Styling
+   Tailwind CSS
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## How it Works
+- ### Extraction
+   The system pulls code changes from GitHub via the Octokit API
+- ### Analysis
+   Snippets are sent to the Groq-powered LLM with a specialized system prompt focusing on industry-standard "Clean Code" principles.
+- ### Scoring
+   The AI assigns a normalized score across 4 key dimensions.
+- ### Trend Mapping
+   The scores are saved to Firebase and mapped on a line chart to show if the developer's quality is improving or declining over a period of time.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup and Installation
+- ### 1. Clone the repository
+   ```bash
+   git clone https://github.com/your-username/GuardCodeAI.git
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
+- ### 2. Install dependencies
+  ```bash
+  npm install
+  ```
+- ### 3. Environment Setup
+  ```bash
+  GROQ_API_KEY=
+  GITHUB_CLIENT_ID=
+  GITHUB_CLIENT_SECRET=
+  NEXTAUTH_SECRET=
+  FIREBASE_PROJECT_ID=
+  FIREBASE_CLIENT_EMAIL=
+  FIREBASE_PRIVATE_KEY=
+  ```
+- ### 4. Run the app
+  ```bash
+  npm run dev
+  ```
   
-
-  testing 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
