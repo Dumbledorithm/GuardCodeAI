@@ -16,11 +16,7 @@ const Header = () => {
                 <div className="flex items-center space-x-4">
                     <span className="font-bold text-xl text-white">GuardCode</span>
                 </div>
-                <nav className="hidden md:flex items-center space-x-6">
-                    <a href="#" className="text-sm font-medium text-gray-400 hover:text-white">Features</a>
-                    <a href="#" className="text-sm font-medium text-gray-400 hover:text-white">Pricing</a>
-                    <a href="#" className="text-sm font-medium text-gray-400 hover:text-white">Docs</a>
-                </nav>
+                
                 <div>
                     {status === 'loading' ? (
                         <div className="h-10 w-24 bg-gray-700 rounded-md animate-pulse"></div>

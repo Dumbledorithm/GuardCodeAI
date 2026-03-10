@@ -1,12 +1,19 @@
 import { db } from '@/lib/firebase';
-import { getServerSession } from 'next-auth';
+import admin from 'firebase-admin';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET: Fetch all reviews for the logged-in user
 export async function GET() {
-    const session = await getServerSession(authOptions);
-    // **FIX:** We now access the user's email directly from the corrected session object.
+    let session;
+    try {
+        session = await getServerSession(authOptions);
+    } catch (err) {
+        console.error('Error getting session in GET /api/reviews:', err);
+        return NextResponse.json({ error: 'Session retrieval failed' }, { status: 500 });
+    }
+
     const userId = session?.user?.email;
 
     if (!userId) {
@@ -29,8 +36,14 @@ export async function GET() {
 
 // POST: Save a new review
 export async function POST(req: NextRequest) {
-    const session = await getServerSession(authOptions);
-    // **FIX:** We get the userId here as well.
+    let session;
+    try {
+        session = await getServerSession(authOptions);
+    } catch (err) {
+        console.error('Error getting session in POST /api/reviews:', err);
+        return NextResponse.json({ error: 'Session retrieval failed' }, { status: 500 });
+    }
+
     const userId = session?.user?.email;
 
     if (!userId) {
@@ -42,15 +55,15 @@ export async function POST(req: NextRequest) {
         const { repo, prNumber, prTitle, qualityScore, reviewText } = body;
         
         const reviewData = {
-            userId: userId, // This will now be a valid string
+            userId: userId,
             repo,
             prNumber,
             prTitle,
             qualityScore,
             reviewText,
-            createdAt: new Date().toISOString(),
-        };
-        
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        } as any;
+
         const docRef = await db.collection('reviews').add(reviewData);
         return NextResponse.json({ id: docRef.id, ...reviewData }, { status: 201 });
     } catch (error) {
