@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import Header  from '@/components/Header';
 import { Hero } from '@/components/Hero';
@@ -24,19 +25,17 @@ export default function Home() {
   const [currentReview, setCurrentReview] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [reviewHistory, setReviewHistory] = useState<HistoricalReview[]>([]);
+  const fetcher = (url: string) => fetch(url).then(res => {
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  });
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      const fetchHistory = async () => {
-        try {
-          const res = await fetch('/api/reviews');
-          if (res.ok) setReviewHistory(await res.json());
-        } catch (err) { console.error("Failed to fetch history", err); }
-      };
-      fetchHistory();
-    }
-  }, [status]);
+  const { data: reviewData, error: reviewsError, mutate } = useSWR(
+    status === 'authenticated' ? '/api/reviews' : null,
+    fetcher
+  );
+
+  // Reviews are fetched on login via SWR (key depends on `status`).
 
   const handleReviewRequest = async (code: string, language: string, details: ReviewDetails, isDiff: boolean) => {
     setIsLoading(true);
@@ -64,7 +63,9 @@ export default function Home() {
       if (!saveResponse.ok) throw new Error('Failed to save the new review.');
       
       const newReview = await saveResponse.json();
-      setReviewHistory(prev => [newReview, ...prev]);
+      // Optimistically update SWR cache and revalidate
+      const updated = [newReview, ...(reviewData || [])];
+      try { await mutate(updated, { revalidate: true }); } catch (e) { /* ignore */ }
 
     } catch (err: any) {
       setError(err.message);
@@ -87,13 +88,13 @@ export default function Home() {
               <div className="mt-12">
                 <h2 className="text-2xl font-bold text-white mb-4">Your Progress</h2>
                 <div className="p-6 bg-gray-900/50 border border-gray-800 rounded-lg">
-                  <ProgressChart data={reviewHistory} />
+                  <ProgressChart data={reviewData || []} />
                 </div>
               </div>
 
               <div className="mt-12">
                 <h2 className="text-2xl font-bold text-white mb-4">Recent Reviews</h2>
-                 <ReviewHistory reviews={reviewHistory} />
+                 <ReviewHistory reviews={reviewData || []} />
               </div>
             </div>
           ) : (
